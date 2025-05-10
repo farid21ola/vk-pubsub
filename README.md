@@ -24,8 +24,6 @@ go mod tidy
 go get github.com/google/wire/cmd/wire
 ```
 
-### Генерация кода
-
 ### Сборка
 
 ```bash
@@ -42,6 +40,22 @@ make run
 ./build/pubsub-server
 # или
 go run ./cmd/server/main.go
+```
+
+## Использование клиента
+
+Для отправки и получения сообщений используйте клиент из папки `cmd/client`:
+
+### Подписка на события
+
+```bash
+go run cmd/client/main.go --action=subscribe --key=test-key
+```
+
+### Публикация событий
+
+```bash
+go run cmd/client/main.go --action=publish --key=test-key --message="Ваше сообщение" --count=5
 ```
 
 ## API Описание
@@ -75,22 +89,6 @@ message PublishRequest {
     string key = 1;
     string data = 2;
 }
-```
-
-## Использование клиента
-
-Для отправки и получения сообщений используйте клиент из папки `cmd/client`:
-
-### Подписка на события
-
-```bash
-go run cmd/client/main.go --action=subscribe --key=test-key
-```
-
-### Публикация событий
-
-```bash
-go run cmd/client/main.go --action=publish --key=test-key --message="Ваше сообщение" --count=5
 ```
 
 ## Структура проекта
