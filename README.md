@@ -1,42 +1,119 @@
-# VK PubSub
+# Сервис подписок PubSub
 
-Сервис публикации и подписки на события, реализованный на Go с использованием gRPC.
+Сервис подписок, работающий по gRPC. Позволяет публиковать события по ключу и подписываться на события по ключу.
 
-## Структура проекта
+## Описание проекта
 
-- `cmd/server` - точка входа в приложение
-- `internal/subpub` - реализация шины событий
-- `internal/server` - реализация gRPC сервера
-- `pkg/proto` - proto-файлы для gRPC
-
-## Требования
-
-- Go 1.21 или выше
-- Docker (опционально)
+Проект состоит из трех основных частей:
+1. Пакет `subpub` - реализация системы публикации-подписки, работающая в памяти
+2. gRPC сервис - реализация gRPC API для взаимодействия с системой публикации-подписки
+3. Пакет `app` - реализация Dependency Injection с использованием Google Wire
 
 ## Сборка и запуск
 
+### Зависимости
+
+- Go 1.23+
+- protoc (для генерации gRPC кода)
+- Google Wire (для инъекции зависимостей)
+
+### Установка зависимостей
+
 ```bash
-# Сборка
-make build
-
-# Запуск
-make run
-
-# Запуск тестов
-make test
+go mod tidy
+go get github.com/google/wire/cmd/wire
 ```
 
-## API
+### Генерация кода
 
-Сервис предоставляет два основных метода:
+### Сборка
 
-1. `Subscribe` - подписка на события по ключу
-2. `Publish` - публикация события по ключу
+```bash
+make build
+# или
+go build -o build/pubsub-server ./cmd/server
+```
 
-## Конфигурация
+### Запуск сервера
 
-Конфигурация сервера находится в файле `config.yaml`. Доступные параметры:
+```bash
+make run
+# или
+./build/pubsub-server
+# или
+go run ./cmd/server/main.go
+```
 
-- `port` - порт для gRPC сервера
-- `host` - хост для gRPC сервера 
+## API Описание
+
+Сервис предоставляет два метода:
+
+### Subscribe
+
+Позволяет подписаться на поток событий по ключу.
+
+```protobuf
+rpc Subscribe(SubscribeRequest) returns (stream Event);
+
+message SubscribeRequest {
+    string key = 1;
+}
+
+message Event {
+    string data = 1;
+}
+```
+
+### Publish
+
+Позволяет опубликовать событие по ключу.
+
+```protobuf
+rpc Publish(PublishRequest) returns (google.protobuf.Empty);
+
+message PublishRequest {
+    string key = 1;
+    string data = 2;
+}
+```
+
+## Использование клиента
+
+Для отправки и получения сообщений используйте клиент из папки `cmd/client`:
+
+### Подписка на события
+
+```bash
+go run cmd/client/main.go --action=subscribe --key=test-key
+```
+
+### Публикация событий
+
+```bash
+go run cmd/client/main.go --action=publish --key=test-key --message="Ваше сообщение" --count=5
+```
+
+## Структура проекта
+
+```
+.
+├── cmd/                  # Исполняемые приложения
+│   ├── server/           # gRPC сервер
+│   └── client/           # gRPC клиент
+├── internal/             # Внутренний код приложений
+│   ├── app/              # DI с помощью Wire
+│   ├── config/           # Конфигурация
+│   ├── server/           # Логика gRPC сервера
+│   └── subpub/           # Система публикации-подписки
+├── pkg/                  # Код для внешнего использования
+│   └── proto/            # Protobuf-определения
+├── build/                # Директория для собранных бинарных файлов
+└── Makefile              # Автоматизация сборки
+```
+
+## Использованные паттерны
+
+- **Dependency Injection** - внедрение зависимостей с помощью Google Wire
+- **Repository Pattern** - абстракция для подписок и публикаций
+- **Graceful Shutdown** - корректное завершение работы сервиса
+- **Logger Middleware** - логирование запросов и ответов
